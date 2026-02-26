@@ -1,79 +1,86 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Body
-from pydantic import BaseModel
-from typing import List, Optional, Dict
 import uvicorn
 import os
 import shutil
-from agents import tutor_system
+import asyncio
+from typing import Dict
+
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+from google.genai import types
+from Session_Coordinator.agent import session_coordinator_agent
 
 app = FastAPI(title="Intelligent Multi-Agent Tutor API")
 
-# Simple in-memory state management
-# In a real app, use a database/session service
-session_db = {
-    "current_concepts": [],
-    "last_quiz": [],
-    "history": []
-}
+# Google ADK Session Service
+session_service = InMemorySessionService()
+APP_NAME = "TutorApp"
+
+async def get_runner():
+    return Runner(
+        agent=session_coordinator_agent,
+        app_name=APP_NAME,
+        session_service=session_service
+    )
 
 @app.post("/upload")
-async def upload_material(file: UploadFile = File(...)):
-    # Save file locally for processing
+async def upload_material(user_id: str, file: UploadFile = File(...)):
     temp_path = f"temp_{file.filename}"
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
     try:
-        # In a real RAG setup, we'd use a PDF loader here
-        # For the demo, we read it as text
         with open(temp_path, "r", errors="ignore") as f:
             content = f.read()
         
-        concepts = await tutor_system.curriculum_agent(content)
-        session_db["current_concepts"] = concepts
+        runner = await get_runner()
+        session = await session_service.create_session(APP_NAME, user_id)
+        
+        # We use the runner to process the material
+        prompt = f"Process this study material and prepare for a quiz: {content}"
+        msg = types.Content(role='user', parts=[types.Part(text=prompt)])
+        
+        final_response = ""
+        async for event in runner.run_async(user_id=user_id, session_id=session.id, new_message=msg):
+            if event.is_final_response() and event.content:
+                final_response = event.content.parts[0].text
         
         return {
             "status": "success",
-            "concepts": concepts
+            "message": "Material processed",
+            "coordinator_response": final_response
         }
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
 @app.get("/quiz/generate")
-async def generate_quiz(difficulty: str = "Medium"):
-    if not session_db["current_concepts"]:
-        raise HTTPException(status_code=400, detail="No study material uploaded yet")
+async def generate_quiz(user_id: str, session_id: str):
+    runner = await get_runner()
     
-    quiz_questions = await tutor_system.quiz_agent(
-        session_db["current_concepts"], 
-        difficulty
-    )
-    session_db["last_quiz"] = quiz_questions
-    return quiz_questions
+    prompt = "Generate a quiz now based on the processed material."
+    msg = types.Content(role='user', parts=[types.Part(text=prompt)])
+    
+    final_response = ""
+    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=msg):
+        if event.is_final_response() and event.content:
+            final_response = event.content.parts[0].text
+            
+    return {"quiz": final_response}
 
 @app.post("/quiz/submit")
-async def submit_quiz(data: Dict = Body(...)):
-    # Expected format: {"answers": ["A", "B", ...]}
-    if not session_db["last_quiz"]:
-        raise HTTPException(status_code=400, detail="No active quiz found")
+async def submit_quiz(user_id: str, session_id: str, answers: str = Body(...)):
+    runner = await get_runner()
     
-    analysis = await tutor_system.feedback_agent(
-        session_db["last_quiz"], 
-        data["answers"]
-    )
+    prompt = f"Here are my answers: {answers}. Please evaluate them."
+    msg = types.Content(role='user', parts=[types.Part(text=prompt)])
     
-    # Store history for state management
-    session_db["history"].append(analysis)
-    
-    # Logic to determine next difficulty
-    next_diff = "Hard" if analysis["score"] > 80 else "Medium"
-    if analysis["score"] < 50: next_diff = "Easy"
-    
-    return {
-        "analysis": analysis,
-        "next_difficulty": next_diff
-    }
+    final_response = ""
+    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=msg):
+        if event.is_final_response() and event.content:
+            final_response = event.content.parts[0].text
+            
+    return {"evaluation": final_response}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,12 +1,11 @@
 from google.adk.agents import Agent
-from ...config import get_nvidia_model
+from ...config import get_gemini_model
 
 resource_finder_agent = Agent(
-    name="ResourceFinder",
-    model=get_nvidia_model("meta/llama-3.1-405b-instruct")
+    name="Resource_Finder",
+    description="Finds relevant educational resources.",
+    instruction="""
+    You are a Resource Finder. Based on the student's performance, find 3 useful links.
+    """,
+    model=get_gemini_model()
 )
-resource_finder_agent.instructions = """You are a digital librarian.
-    Look at the weak topics identified in the session state.
-    Generate specific YouTube search links for each weak topic to help the student review.
-    Format your response as a helpful list of resources."""
-

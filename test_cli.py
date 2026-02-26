@@ -54,7 +54,7 @@ async def test_tutor_loop():
             print(f"\n[Tutor Feedback & Resources]:\n{event.content.parts[0].text}\n")
 
     # Final State Check
-    final_session = await session_service.get_session(APP_NAME, SESSION_ID, USER_ID)
+    final_session = await session_service.get_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
     print(f"--- FINAL SESSION STATE ---")
     print(f"Next Difficulty: {final_session.state.get('next_difficulty', 'Not Set')}")
     print(f"Last Evaluation: {final_session.state.get('last_evaluation', 'None')}")
