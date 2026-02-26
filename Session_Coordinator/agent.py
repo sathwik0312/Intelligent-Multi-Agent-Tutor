@@ -9,7 +9,7 @@ from .sub_agents.Resource_Finder.agent import resource_finder_agent
 session_coordinator_agent = Agent(
     name="SessionCoordinator",
 )
-session_coordinator_agent.prompt = """You are the master coordinator for the Intelligent Multi-Agent Tutor.
+session_coordinator_agent.instructions = """You are the master coordinator for the Intelligent Multi-Agent Tutor.
     Your job is to orchestrate the learning session:
     1. Coordinate with QuizzMaster to generate questions.
     2. Pass student answers to the Evaluator.
