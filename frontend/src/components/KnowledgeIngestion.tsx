@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileText, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { mockUpload, type UploadResponse } from '@/lib/mockApi';
+import { uploadMaterial, type UploadResponse } from '@/lib/api';
 
 interface KnowledgeIngestionProps {
   onUploadComplete: (response: UploadResponse) => void;
@@ -37,7 +37,7 @@ const KnowledgeIngestion = ({ onUploadComplete, onAgentChange }: KnowledgeIngest
       setTrailProgress(prev => (prev >= 100 ? 0 : prev + 2));
     }, 50);
 
-    const response = await mockUpload(file, addLog);
+    const response = await uploadMaterial(file, addLog);
 
     clearInterval(trailInterval);
     setTrailProgress(100);

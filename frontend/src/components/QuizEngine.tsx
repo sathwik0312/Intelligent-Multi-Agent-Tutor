@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { mockGenerateQuiz, mockSubmitQuiz, type QuizQuestion, type SkillProfile, type ReviewCard as ReviewCardType } from '@/lib/mockApi';
+import { generateQuiz, submitQuiz, type QuizQuestion } from '@/lib/api';
+import type { SkillProfile, ReviewCard as ReviewCardType } from '@/lib/mockApi';
 
 interface QuizEngineProps {
   onComplete: (skills: SkillProfile[], cards: ReviewCardType[]) => void;
@@ -25,11 +26,23 @@ const QuizEngine = ({ onComplete, onAgentChange }: QuizEngineProps) => {
 
   useEffect(() => {
     onAgentChange('quizmaster');
-    mockGenerateQuiz().then(q => { setQuestions(q); setLoading(false); });
+    generateQuiz().then(q => { 
+      // Adapt API response to component expected format
+      const formatted = q.map((item: any, idx: number) => ({
+        id: (idx + 1).toString(),
+        question: item.question,
+        options: item.options,
+        correctIndex: item.options.indexOf(item.answer),
+        topic: 'Curriculum',
+        difficulty: (item.difficulty || 'medium').toLowerCase()
+      }));
+      setQuestions(formatted); 
+      setLoading(false); 
+    });
   }, [onAgentChange]);
 
   const current = questions[currentIdx];
-  const difficulty = current ? difficultyColors[current.difficulty] : difficultyColors.easy;
+  const difficulty = current ? (difficultyColors[current.difficulty] || difficultyColors.medium) : difficultyColors.easy;
   const progress = questions.length ? ((currentIdx) / questions.length) * 100 : 0;
 
   const handleNext = async () => {
@@ -43,9 +56,30 @@ const QuizEngine = ({ onComplete, onAgentChange }: QuizEngineProps) => {
     } else {
       setSubmitting(true);
       onAgentChange('evaluator');
-      const result = await mockSubmitQuiz(newAnswers);
+      
+      // Convert answers map to list for API
+      const answersList = questions.map(q => q.options[newAnswers[q.id]]);
+      const result = await submitQuiz(answersList);
+      
       onAgentChange('feedback');
-      onComplete(result.skillProfile, result.reviewCards);
+
+      // Map API result back to mock UI types for now to avoid breaking dashboard
+      const skillProfile: SkillProfile[] = result.analysis.weak_topics.map(topic => ({
+        topic,
+        score: 0,
+        maxScore: 1
+      }));
+
+      const reviewCards: ReviewCardType[] = result.analysis.recommended_search_queries.map((query, i) => ({
+        id: `rc_${i}`,
+        topic: 'Review',
+        reason: result.analysis.improvement_plan,
+        videoTitle: query,
+        videoChannel: 'YouTube Search',
+        thumbnailUrl: ''
+      }));
+
+      onComplete(skillProfile, reviewCards);
     }
   };
 
