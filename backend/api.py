@@ -1,10 +1,7 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Body
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional, Dict
-import uvicorn
+import asyncio
 import os
 import shutil
+from fastapi import FastAPI, UploadFile, File, HTTPException, Body
 from Session_Coordinator.agent import session_coordinator_agent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
@@ -64,14 +61,32 @@ async def upload_material(file: UploadFile = File(...)):
 @app.get("/quiz/generate")
 async def generate_quiz(session_id: str, difficulty: str = "Medium"):
     user_id = "default_user"
+    # Set a reasonable timeout for the runner
     runner = Runner(agent=session_coordinator_agent, app_name=APP_NAME, session_service=session_service)
+    
+    # Check if session exists first
+    try:
+        await session_service.get_session(app_name=APP_NAME, session_id=session_id, user_id=user_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Session not found. Please upload material first.")
+
     msg = types.Content(role='user', parts=[types.Part(text=f"Generate a {difficulty} quiz for me.")])
     
     quiz_text = ""
-    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=msg):
-        if event.is_final_response() and event.content:
-            quiz_text = event.content.parts[0].text
+    try:
+        # We wrap this in a timeout to prevent infinite hangs
+        async with asyncio.timeout(60): 
+            async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=msg):
+                if event.is_final_response() and event.content:
+                    quiz_text = event.content.parts[0].text
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="Quiz generation timed out. Please try again.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
             
+    if not quiz_text:
+        return {"error": "No quiz generated. The agent might be struggling with the context."}
+        
     return {"quiz": quiz_text}
 
 @app.post("/quiz/submit")
