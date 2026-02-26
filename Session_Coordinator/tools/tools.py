@@ -1,9 +1,21 @@
-from google.adk import agents,tools
-import os
+from typing import Any, Dict
 
-async def save_to_state(key: str, value: any,tool_context: tools.ToolContext):
-    """Saves a specific information to the session state."""
-    tool_context.state[key] = value
-    return f"Successfully saved {key} to state."
+def save_quiz_to_context(state: Dict[str, Any], questions: list, answers: list):
+    """Saves quiz questions and answers to the session state."""
+    state["current_quiz"] = {
+        "questions": questions,
+        "answers": answers
+    }
+    return "Quiz saved to context."
 
-save_tool = tools.FunctionTool(save_to_state)
+def get_quiz_from_context(state: Dict[str, Any]):
+    """Retrieves the current quiz from session state."""
+    return state.get("current_quiz", {})
+
+def save_evaluation_to_context(state: Dict[str, Any], score: int, weak_topics: list):
+    """Saves evaluation results to session state."""
+    state["last_evaluation"] = {
+        "score": score,
+        "weak_topics": weak_topics
+    }
+    return "Evaluation saved."
