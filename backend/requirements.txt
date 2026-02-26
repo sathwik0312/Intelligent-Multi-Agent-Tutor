@@ -6,3 +6,4 @@ python-dotenv
 langchain
 langchain-nvidia-ai-endpoints
 langchain-core
+gunicorn
