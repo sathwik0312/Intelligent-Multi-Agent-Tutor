@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Body
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 import uvicorn
@@ -10,6 +11,15 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
 app = FastAPI(title="Intelligent Multi-Agent Tutor API")
+
+# Add CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # In production, replace with your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize Session Service
 session_service = InMemorySessionService()
