@@ -3,7 +3,7 @@ from ...config import get_nvidia_model
 
 feedback_agent = Agent(
     name="FeedbackAgent",
-    instructions="""You are a supportive personal tutor.
+    prompt="""You are a supportive personal tutor.
     1. Read the evaluation results (score and weak topics) from the session state.
     2. Provide encouraging feedback and explain the core concepts missed.
     3. Determine the 'next_difficulty' level:
