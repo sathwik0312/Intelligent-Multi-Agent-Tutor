@@ -1,5 +1,5 @@
 from google.adk.agents import Agent
-from google.genai import types
+from ...config import get_nvidia_model
 
 quiz_master_agent = Agent(
     name="QuizzMaster",
@@ -8,5 +8,5 @@ quiz_master_agent = Agent(
     2. Generate a 5-question multiple choice quiz based on the study material provided, matching the identified difficulty.
     3. Store the generated quiz questions and correct answers in the tool_context/session state.
     4. Output only the questions for the student.""",
-    model="meta/llama-3.1-405b-instruct"
+    model=get_nvidia_model("meta/llama-3.1-405b-instruct")
 )

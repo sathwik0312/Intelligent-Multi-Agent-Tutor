@@ -1,4 +1,5 @@
 from google.adk.agents import Agent
+from ...config import get_nvidia_model
 
 feedback_agent = Agent(
     name="FeedbackAgent",
@@ -10,5 +11,5 @@ feedback_agent = Agent(
        - If score < 50: 'Easy'
        - Otherwise: 'Medium'
     4. Save this 'next_difficulty' into the session state so the QuizzMaster can use it for the next round.""",
-    model="meta/llama-3.1-405b-instruct"
+    model=get_nvidia_model("meta/llama-3.1-405b-instruct")
 )
