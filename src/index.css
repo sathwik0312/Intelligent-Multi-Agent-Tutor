@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 6%;
+    --foreground: 210 20% 92%;
+
+    --card: 220 18% 10%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 220 18% 10%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 160 84% 39%;
+    --primary-foreground: 220 20% 6%;
+
+    --secondary: 220 16% 16%;
+    --secondary-foreground: 210 20% 80%;
+
+    --muted: 220 14% 14%;
+    --muted-foreground: 215 12% 50%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 220 20% 6%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 14% 18%;
+    --input: 220 14% 18%;
+    --ring: 160 84% 39%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 20% 8%;
+    --sidebar-foreground: 210 20% 80%;
+    --sidebar-primary: 160 84% 39%;
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 220 16% 14%;
+    --sidebar-accent-foreground: 210 20% 80%;
+    --sidebar-border: 220 14% 16%;
+    --sidebar-ring: 160 84% 39%;
+
+    /* Custom tokens */
+    --emerald-glow: 160 84% 39%;
+    --amber-glow: 38 92% 50%;
+    --red-glow: 0 72% 51%;
+    --cyan-glow: 185 80% 50%;
+    --glass-bg: 220 18% 10% / 0.6;
+    --glass-border: 220 14% 24% / 0.5;
+    --terminal-bg: 220 22% 5%;
+    --terminal-text: 160 60% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  code, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-xl border;
+    background: hsla(var(--glass-bg));
+    border-color: hsla(var(--glass-border));
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  }
+
+  .glass-panel-strong {
+    @apply rounded-xl border;
+    background: hsla(220, 18%, 10%, 0.85);
+    border-color: hsla(var(--glass-border));
+    backdrop-filter: blur(30px) saturate(1.4);
+  }
+
+  .glow-emerald {
+    box-shadow: 0 0 20px hsla(var(--emerald-glow) / 0.15), 0 0 60px hsla(var(--emerald-glow) / 0.05);
+  }
+
+  .glow-text-emerald {
+    text-shadow: 0 0 20px hsla(var(--emerald-glow) / 0.5);
+  }
+
+  .terminal-line {
+    @apply font-mono text-sm leading-relaxed;
+    color: hsl(var(--terminal-text));
+  }
+
+  .dot-pulse {
+    @apply w-2 h-2 rounded-full;
+    background: hsl(var(--emerald-glow));
+    box-shadow: 0 0 8px hsl(var(--emerald-glow));
+    animation: dot-pulse 1.5s ease-in-out infinite;
+  }
+
+  .agent-trail {
+    background: linear-gradient(90deg, hsla(var(--emerald-glow) / 0), hsla(var(--emerald-glow) / 0.6), hsla(var(--emerald-glow) / 0));
+    height: 2px;
+  }
+
+  .difficulty-meter {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer utilities {
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  @keyframes trail-move {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+
+  @keyframes terminal-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+}
