@@ -7,3 +7,5 @@ langchain
 langchain-nvidia-ai-endpoints
 langchain-core
 gunicorn
+google-genai
+google-adk
