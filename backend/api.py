@@ -2,6 +2,10 @@ import asyncio
 import os
 import shutil
 from fastapi import FastAPI, UploadFile, File, HTTPException, Body
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional, Dict
+import uvicorn
 from Session_Coordinator.agent import session_coordinator_agent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
