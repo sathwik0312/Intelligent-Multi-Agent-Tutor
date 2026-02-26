@@ -26,6 +26,8 @@ export interface QuizResult {
   next_difficulty: string;
 }
 
+let currentSessionId: string | null = null;
+
 export const uploadMaterial = async (file: File, onLog: (msg: string) => void): Promise<UploadResponse> => {
   onLog(`📄 Uploading: ${file.name}`);
   const formData = new FormData();
@@ -39,18 +41,23 @@ export const uploadMaterial = async (file: File, onLog: (msg: string) => void): 
   if (!response.ok) throw new Error('Upload failed');
   
   const data = await response.json();
+  currentSessionId = data.session_id; // Capture the session ID
   onLog(`✅ Analysis complete. Found ${data.concepts.length} concepts.`);
   return data;
 };
 
 export const generateQuiz = async (difficulty: string = 'Medium'): Promise<QuizQuestion[]> => {
-  const response = await fetch(`${API_BASE_URL}/quiz/generate?difficulty=${difficulty}`);
+  if (!currentSessionId) throw new Error('No active session. Please upload material first.');
+  const response = await fetch(`${API_BASE_URL}/quiz/generate?session_id=${currentSessionId}&difficulty=${difficulty}`);
   if (!response.ok) throw new Error('Quiz generation failed');
-  return await response.json();
+  const data = await response.json();
+  // Ensure we return an array
+  return Array.isArray(data) ? data : [data];
 };
 
 export const submitQuiz = async (answers: string[]): Promise<QuizResult> => {
-  const response = await fetch(`${API_BASE_URL}/quiz/submit`, {
+  if (!currentSessionId) throw new Error('No active session');
+  const response = await fetch(`${API_BASE_URL}/quiz/submit?session_id=${currentSessionId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ answers }),
