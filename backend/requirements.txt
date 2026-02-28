@@ -9,3 +9,7 @@ langchain-core
 gunicorn
 google-genai
 google-adk
+chromadb
+pypdf
+youtube-transcript-api
+pytube
