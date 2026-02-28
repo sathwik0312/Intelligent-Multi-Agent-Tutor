@@ -97,18 +97,36 @@ async def generate_quiz(session_id: str, difficulty: str = "Medium"):
             
     return quiz_data
 
-@app.post("/quiz/submit")
-async def submit_quiz(session_id: str, data: Dict = Body(...)):
-    user_id = "default_user"
-    runner = Runner(agent=session_coordinator_agent, app_name=APP_NAME, session_service=session_service)
-    msg = types.Content(role='user', parts=[types.Part(text=f"Here are my answers: {data.get('answers')}")])
+from Session_Coordinator.sub_agents.Ingestion_Agent.agent import ingestion_agent
+from Session_Coordinator.tools.youtube_tools import fetch_youtube_transcript
+
+@app.post("/ingest/youtube")
+async def ingest_youtube(data: Dict = Body(...)):
+    # data: {"url": "https://www.youtube.com/watch?v=..."}
+    url = data.get("url")
+    if not url:
+        raise HTTPException(status_code=400, detail="YouTube URL is required")
     
-    feedback = ""
-    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=msg):
+    user_id = "default_user"
+    session = await session_service.create_session(app_name=APP_NAME, user_id=user_id, state={})
+    
+    transcript = fetch_youtube_transcript(url)
+    if transcript.startswith("Error"):
+        raise HTTPException(status_code=400, detail=transcript)
+    
+    runner = Runner(agent=ingestion_agent, app_name=APP_NAME, session_service=session_service)
+    msg = types.Content(role='user', parts=[types.Part(text=f"Process this YouTube transcript and prepare the knowledge base: {transcript[:5000]}")])
+    
+    result = ""
+    async for event in runner.run_async(user_id=user_id, session_id=session.id, new_message=msg):
         if event.is_final_response() and event.content:
-            feedback = event.content.parts[0].text
+            result = event.content.parts[0].text
             
-    return {"feedback": feedback}
+    return {
+        "status": "success",
+        "session_id": session.id,
+        "summary": result
+    }
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
